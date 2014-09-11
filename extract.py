@@ -9,6 +9,7 @@ from skimage.filter import threshold_otsu
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import os
 
 def calcIntersection(x1, y1, x2, y2, x3, y3, x4, y4):
     px = ((x1*y2 - y1*x2)*(x3-x4) - (x1-x2)*(x3*y4 - y3*x4)) / ((x1-x2)*(y3-y4) - (y1-y2)*(x3-x4))
@@ -138,11 +139,17 @@ plt.subplot(144)
 plt.imshow(warped)
 plt.show()
 
+# Prepare the directory
+if not os.path.exists('extracted'):
+    os.makedirs('extracted')
+for i in xrange(10):
+    os.makedirs('extracted/'+str(i))
+
 fname_txt = fname[:-3]+'txt'
 
 f = open(fname_txt, 'r')
 f.readline() # the header
-lines = f.readline()[:-1].split(',')
+lines = f.readline().split(',')
 f.close()
 
 counter = [0]*10
