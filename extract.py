@@ -6,6 +6,7 @@ from skimage.filter import threshold_otsu
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import glob
 
 def calcIntersection(x1, y1, x2, y2, x3, y3, x4, y4):
     """ Calculate the intersection points between two lines """
@@ -61,7 +62,6 @@ def extract_digits(fname):
     h, theta, d = hough_line(gcrope)
 
     # Divide the hough space for searching the different horizontal and vertical lines
-    hcropv = h[:, 60:120]
     hcroph = h[:, 0:30]
 
     rows, cols = gcrope.shape
@@ -81,7 +81,16 @@ def extract_digits(fname):
         #plt.plot((0, cols), (y0, y1), '-r')
 
     if len(HL) != 2 or len(VL) != 2:
-        return
+        return False
+    
+    points = [VL[0], VL[1], HL[0], HL[1]]
+    # Check for error
+    epsilon = 1e-10
+    for i in xrange(4):
+        for j in xrange(i+1, 4):
+            if points[i] == points[j]:
+                print 'Error Line'
+                return False
 
     # Calculate the intersection between points using determinants
     p1 = calcIntersection(VL[0][0][0], VL[0][0][1], VL[0][1][0], VL[0][1][1], HL[0][0][0], HL[0][0][1], HL[0][1][0], HL[0][1][1])
@@ -101,6 +110,14 @@ def extract_digits(fname):
 
     for i in xrange(4):
         dest_points[i] = search_closest_points(corners[i], points)
+        
+    # Check for error
+    epsilon = 1e-10
+    for i in xrange(4):
+        for j in xrange(i+1, 4):
+            if calc_distance(dest_points[i], dest_points[j]) < epsilon:
+                print 'Error point'
+                return False
 
     dst = np.array(dest_points)
 
@@ -111,8 +128,8 @@ def extract_digits(fname):
     # Prepare the directory
     if not os.path.exists('extracted'):
         os.makedirs('extracted')
-    for i in xrange(10):
-        os.makedirs('extracted/'+str(i))
+        for i in xrange(10):
+            os.makedirs('extracted/'+str(i))
 
     # Load the annotation for each digit
     fname_txt = fname[:-3]+'txt'
@@ -122,7 +139,6 @@ def extract_digits(fname):
     f.close()
 
     # Extract each digit
-    counter = [0]*10    # The counter for filename
     for i in xrange(4):
         if len(lines[i]) < 3:
             hundred = '0'
@@ -153,5 +169,25 @@ def extract_digits(fname):
         counter[int(hundred)] += 1
         io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, 140:210])
 
-fname = 'select/40658_3.jpg'
-extract_digits(fname)
+    return True
+
+#fname = 'select/40658_3.jpg'
+counter = [0]*10
+success = 0; fail = 0;
+
+#fname = 'select/15111_2.jpg'
+#extract_digits(fname)
+
+all_pics = glob.glob('select/*.jpg')
+for pic in all_pics:
+    print 'Extracting', pic, '...'
+    if extract_digits(pic):
+        success += 1
+        print 'Success!!!'
+    else:
+        fail += 1
+        print 'Fail.. :('
+
+print 'total success:', success
+print 'total fail:', fail
+print 'statistic:', counter
