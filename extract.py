@@ -138,6 +138,45 @@ plt.subplot(144)
 plt.imshow(warped)
 plt.show()
 
+fname_txt = fname[:-3]+'txt'
+
+f = open(fname_txt, 'r')
+f.readline() # the header
+lines = f.readline()[:-1].split(',')
+f.close()
+
+counter = [0]*10
+
+for i in xrange(4):
+    if len(lines[i]) < 3:
+        hundred = '0'
+    else:
+        hundred = lines[i][0]
+    counter[int(hundred)] += 1
+    io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, :70])
+    
+for i in xrange(4):
+    if len(lines[i]) == 3:
+        hundred = lines[i][1]
+    elif len(lines[i]) == 2:
+        hundred = lines[i][0]
+    else:
+        hundred = '0'
+    counter[int(hundred)] += 1
+    io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, 70:140])
+
+for i in xrange(4):
+    if len(lines[i]) == 1:
+        hundred = lines[i][0]
+    elif len(lines[i]) == 2:
+        hundred = lines[i][1]
+    elif len(lines[i]) == 3:
+        hundred = lines[i][2]
+    else:
+        hundred = '0'
+    counter[int(hundred)] += 1
+    io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, 140:210])
+
 #rgcrope = rotate(gcrope, 2)
 #plt.subplot(144)
 #plt.imshow(rgcrope, cmap='gray')
