@@ -3,6 +3,7 @@ from skimage import color
 from skimage.transform import hough_line, hough_line_peaks
 from skimage.transform import PiecewiseAffineTransform, warp
 from skimage.filter import threshold_otsu
+from skimage.feature import corner_harris, corner_subpix, corner_peaks
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -171,23 +172,141 @@ def extract_digits(fname):
 
     return True
 
+def extract_digits2(fname):
+    """ Extract the sub images of digits from the scanned image
+
+    fname is the filename of the image
+    """
+    c1 = io.imread(fname)
+
+    # Cropped the region of interest and convert to grayscale
+    dim = c1.shape
+    y0 = 350; y1 = y0+450;
+    if dim[0] < 1100:
+        y0 = dim[0]*300/1700; y1 = y0 + dim[0]*400/1700
+    elif dim[0] > 1700 and dim[0] < 2400:
+        y0 = 350; y1 = y0+450;
+    else:
+        y0 = dim[0]*350/1700; y1 = y0 + dim[0]*450/1700
+    x0 = dim[1]*19/24
+
+    cropped = c1[y0:y1, x0:]
+    gcrop = color.rgb2gray(cropped)
+
+    # Threshold to create binary image
+    thresh = threshold_otsu(gcrop)
+    gcrope = gcrop < thresh
+
+    # Find corner with harris corner detection
+    coords = corner_peaks(corner_harris(gcrope, k=0.1), min_distance=5)
+    coords_subpix = corner_subpix(gcrope, coords, window_size=13)
+
+    plt.subplot(121)
+    plt.imshow(gcrope, interpolation='nearest', cmap=plt.cm.gray)
+    plt.plot(coords[:, 1], coords[:, 0], '.b', markersize=3)
+    plt.plot(coords_subpix[:, 1], coords_subpix[:, 0], '+r', markersize=15)
+    #ax.axis((0, 350, 350, 0))
+    #plt.show()
+
+    # Transform the region of interest into correct orientation and scale
+    src_points = [(0,0), (0, 400), (210, 400), (210, 0)]
+    dim = gcrope.shape
+    corners = [(0,0), (dim[0], 0), (dim[0], dim[1]), (0, dim[0])]
+
+    src = np.array(src_points)
+
+    dest_points = [[] for x in range(4)]
+
+    for i in xrange(4):
+        dest_points[i] = search_closest_points(corners[i], coords_subpix)
+
+    for i in xrange(4):
+        plt.plot(dest_points[i][1], dest_points[i][0], '*b', markersize=10)
+        
+    # Check for error
+    epsilon = 1e-10
+    for i in xrange(4):
+        for j in xrange(i+1, 4):
+            if calc_distance(dest_points[i], dest_points[j]) < epsilon:
+                print 'Error point'
+                return False
+
+    for i in xrange(4):
+        dest_points[i][1], dest_points[i][0] = dest_points[i][0], dest_points[i][1]
+    dst = np.array(dest_points)
+
+    tform = PiecewiseAffineTransform()
+    tform.estimate(src, dst)
+    warped = warp(gcrope, tform, output_shape=(400, 210))
+    
+    plt.subplot(122)
+    plt.imshow(warped, cmap='gray')
+    plt.show()
+
+    # Prepare the directory
+    if not os.path.exists('extracted'):
+        os.makedirs('extracted')
+        for i in xrange(10):
+            os.makedirs('extracted/'+str(i))
+
+    # Load the annotation for each digit
+    fname_txt = fname[:-3]+'txt'
+    f = open(fname_txt, 'r')
+    f.readline()                        # Remove the header
+    lines = f.readline().split(',')
+    f.close()
+
+    # Extract each digit
+    for i in xrange(4):
+        if len(lines[i]) < 3:
+            hundred = '0'
+        else:
+            hundred = lines[i][0]
+        counter[int(hundred)] += 1
+        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, :70])
+        
+    for i in xrange(4):
+        if len(lines[i]) == 3:
+            hundred = lines[i][1]
+        elif len(lines[i]) == 2:
+            hundred = lines[i][0]
+        else:
+            hundred = '0'
+        counter[int(hundred)] += 1
+        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, 70:140])
+
+    for i in xrange(4):
+        if len(lines[i]) == 1:
+            hundred = lines[i][0]
+        elif len(lines[i]) == 2:
+            hundred = lines[i][1]
+        elif len(lines[i]) == 3:
+            hundred = lines[i][2]
+        else:
+            hundred = '0'
+        counter[int(hundred)] += 1
+        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, 140:210])
+
+    return True
+
 #fname = 'select/40658_3.jpg'
 counter = [0]*10
 success = 0; fail = 0;
 
-#fname = 'select/15111_2.jpg'
-#extract_digits(fname)
+fname = 'select/12092_4.jpg'
+#fname = 'select/12110_10.jpg'
+extract_digits2(fname)
 
-all_pics = glob.glob('select/*.jpg')
-for pic in all_pics:
-    print 'Extracting', pic, '...'
-    if extract_digits(pic):
-        success += 1
-        print 'Success!!!'
-    else:
-        fail += 1
-        print 'Fail.. :('
+# all_pics = glob.glob('select/*.jpg')
+# for pic in all_pics:
+#     print 'Extracting', pic, '...'
+#     if extract_digits(pic):
+#         success += 1
+#         print 'Success!!!'
+#     else:
+#         fail += 1
+#         print 'Fail.. :('
 
-print 'total success:', success
-print 'total fail:', fail
-print 'statistic:', counter
+# print 'total success:', success
+# print 'total fail:', fail
+# print 'statistic:', counter
