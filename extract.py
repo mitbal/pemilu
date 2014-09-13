@@ -79,7 +79,7 @@ def extract_corner_hough(patch):
 
     # Find the nearest point for each corner
     dim = patch.shape
-    corners = [(0,0), (dim[0], 0), (0, dim[1]), (dim[0], dim[1])]
+    corners = [(0,0), (0, dim[0]), (dim[1], dim[0]), (dim[1], 0)]
 
     points = [p1, p2, p3, p4]
     dest_points = [[] for x in range(4)]
@@ -115,7 +115,7 @@ def extract_corner_harris(patch):
     
     # Find the nearest point for each corner
     dim = patch.shape
-    corners = [(0,0), (0, dim[0]), (dim[1], dim[0]), (dim[1], 0)]
+    corners = [(0,0), (dim[0], 0), (dim[0], dim[1]), (0, dim[1])]
 
     dest_points = [[] for x in range(4)]
     for i in xrange(4):
@@ -165,15 +165,16 @@ def extract_digits(fname):
     gcrope = gcrop < thresh
 
     # Extract four corner points
-    #dest_points = extract_corner_hough(gcrope)
-    dest_points = extract_corner_harris(gcrope)
+    dest_points = extract_corner_hough(gcrope)
+    #dest_points = extract_corner_harris(gcrope)
+    src_points = [(0,0), (0, 400), (210, 400), (210, 0)]
     
     if dest_points == []:
         return False
     
     #Transform to rescale and reorient the image
     dst = np.array(dest_points)
-    src = np.array([(0,0), (210, 0), (0, 400), (210, 400)])
+    src = np.array(src_points)
     
     tform = PiecewiseAffineTransform()
     tform.estimate(src, dst)
