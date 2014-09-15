@@ -174,6 +174,12 @@ def extract_corner_harris(patch):
 
     return dest_points
 
+def remove_edge(patch):
+    x = (patch.shape)[1]*9/10.
+    patch[:, x:] = 0
+
+    return patch
+
 def extract_digits(fname):
     """ Extract the sub images of digits from the scanned image
 
@@ -199,6 +205,9 @@ def extract_digits(fname):
     # Threshold to create binary image
     thresh = threshold_otsu(gcrop)
     gcrope = gcrop < thresh
+
+    # Remove unwanted edge
+    gcrope = remove_edge(gcrope)
 
     if DEBUG:
         plt.subplot(141);
@@ -284,7 +293,7 @@ def extract_digits(fname):
 counter = [0]*10
 success = 0; fail = 0;
 
-# fname = 'select/5503_0.jpg'
+# fname = 'select/87813_2.jpg'
 # extract_digits(fname)
 
 all_pics = glob.glob('select/*.jpg')
