@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 import os
 import glob
 
-DEBUG = False
+DEBUG = True
+HEIGHT = 400
+WIDTH = 150
 
 def calcIntersection(x1, y1, x2, y2, x3, y3, x4, y4):
     """ Calculate the intersection points between two lines """
@@ -206,7 +208,7 @@ def extract_digits(fname):
     # Extract four corner points
     dest_points = extract_corner_hough(gcrope)
     #dest_points = extract_corner_harris(gcrope)
-    src_points = [(0,0), (0, 400), (210, 400), (210, 0)]
+    src_points = [(0,0), (0, HEIGHT), (WIDTH, HEIGHT), (WIDTH, 0)]
     
     if dest_points == []:
         return False
@@ -224,7 +226,7 @@ def extract_digits(fname):
     
     tform = PiecewiseAffineTransform()
     tform.estimate(src, dst)
-    warped = warp(gcrope, tform, output_shape=(400, 210))
+    warped = warp(gcrope, tform, output_shape=(HEIGHT, WIDTH))
 
     if DEBUG:
         plt.subplot(144)
@@ -245,6 +247,7 @@ def extract_digits(fname):
     lines = f.readline().split(',')
     f.close()
 
+    width = WIDTH / 3
     # Extract each digit
     for i in xrange(4):
         if len(lines[i]) < 3:
@@ -252,7 +255,7 @@ def extract_digits(fname):
         else:
             hundred = lines[i][0]
         counter[int(hundred)] += 1
-        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, :70])
+        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, :width])
         
     for i in xrange(4):
         if len(lines[i]) == 3:
@@ -262,7 +265,7 @@ def extract_digits(fname):
         else:
             hundred = '0'
         counter[int(hundred)] += 1
-        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, 70:140])
+        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, width:2*width])
 
     for i in xrange(4):
         if len(lines[i]) == 1:
@@ -274,14 +277,14 @@ def extract_digits(fname):
         else:
             hundred = '0'
         counter[int(hundred)] += 1
-        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, 140:210])
+        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, 2*width:3*width])
 
     return True
 
 counter = [0]*10
 success = 0; fail = 0;
 
-# fname = 'select/6482_2.jpg'
+# fname = 'select/5503_0.jpg'
 # extract_digits(fname)
 
 all_pics = glob.glob('select/*.jpg')
