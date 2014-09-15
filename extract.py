@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import os
 import glob
 
+DEBUG = False
+
 def calcIntersection(x1, y1, x2, y2, x3, y3, x4, y4):
     """ Calculate the intersection points between two lines """
     px = ((x1*y2 - y1*x2)*(x3-x4) - (x1-x2)*(x3*y4 - y3*x4)) / ((x1-x2)*(y3-y4) - (y1-y2)*(x3-x4))
@@ -35,8 +37,8 @@ def search_closest_points(p, points):
     return cp
 
 def extract_corner_hough(patch):
-    """Extract four corner points using Hough transform
-    
+    """Extract four corner points using Hough transform 
+
     """
     # Find the lines that makes the boundary box using Hough Transform
     h, theta, d = hough_line(patch)
@@ -51,19 +53,29 @@ def extract_corner_hough(patch):
         y0 = (dist - 0 * np.cos(angle)) / np.sin(angle)
         y1 = (dist - cols * np.cos(angle)) / np.sin(angle)
         VL += [((0, y0), (cols, y1))]
-        #plt.plot((0, cols), (y0, y1), '-r')
+
     # Horizontal lines
     HL = []
     for _, angle, dist in zip(*hough_line_peaks(hcroph, theta, d, min_distance=250, min_angle=9, num_peaks=2)):
         y0 = (dist - 0 * np.cos(angle)) / np.sin(angle)
         y1 = (dist - cols * np.cos(angle)) / np.sin(angle)
         HL += [((0, y0), (cols, y1))]
-        #plt.plot((0, cols), (y0, y1), '-r')
 
-    if len(HL) != 2 or len(VL) != 2:
+    if DEBUG:
+        plt.subplot(142)
+        plt.title('hough line')
+        plt.imshow(patch, cmap='gray')
+        for i in xrange(len(VL)):
+            plt.plot((0, VL[i][1][0]), (VL[i][0][1], VL[i][1][1]), 'r-')
+        for i in xrange(len(HL)):
+            plt.plot((0, HL[i][1][0]), (HL[i][0][1], HL[i][1][1]), 'r-')
+        plt.axis([0, cols, rows, 0])
+
+    if len(HL) < 2 or len(VL) < 2:
+        print 'No line found'
         return []
     
-    points = [VL[0], VL[1], HL[0], HL[1]]
+    points = [VL[0], VL[-1], HL[0], HL[-1]]
     # Check for error
     for i in xrange(4):
         for j in xrange(i+1, 4):
@@ -164,6 +176,11 @@ def extract_digits(fname):
     thresh = threshold_otsu(gcrop)
     gcrope = gcrop < thresh
 
+    if DEBUG:
+        plt.subplot(141);
+        plt.title('Cropped')
+        plt.imshow(gcrop, cmap='gray')
+
     # Extract four corner points
     dest_points = extract_corner_hough(gcrope)
     #dest_points = extract_corner_harris(gcrope)
@@ -171,6 +188,13 @@ def extract_digits(fname):
     
     if dest_points == []:
         return False
+
+    if DEBUG:
+        plt.subplot(143)
+        plt.title('Thresholded & corner points')
+        plt.imshow(gcrope, cmap='gray')
+        for p in dest_points:
+            plt.plot(p[0], p[1], 'bo', markersize=10)
     
     #Transform to rescale and reorient the image
     dst = np.array(dest_points)
@@ -179,6 +203,12 @@ def extract_digits(fname):
     tform = PiecewiseAffineTransform()
     tform.estimate(src, dst)
     warped = warp(gcrope, tform, output_shape=(400, 210))
+
+    if DEBUG:
+        plt.subplot(144)
+        plt.title('Warped')
+        plt.imshow(warped, cmap='gray')
+        plt.show()
 
     # Prepare the directory
     if not os.path.exists('extracted'):
@@ -228,6 +258,9 @@ def extract_digits(fname):
 
 counter = [0]*10
 success = 0; fail = 0;
+
+# fname = 'select/9893_1.jpg'
+# extract_digits(fname)
 
 all_pics = glob.glob('select/*.jpg')
 for pic in all_pics:
