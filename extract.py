@@ -36,6 +36,20 @@ def search_closest_points(p, points):
             cp = points[i]
     return cp
 
+def search_closest_line(lines, ref_line):
+    """ Search closest line from a set of line (represented by two points) to a reference line
+    using a simple, naive assumption of the summation of both points' distance.
+    """
+    closest_line = [(0,0), (0,0)]
+    min_dist = 1000000000
+    for line in lines:
+        dist = calc_distance(line[0], ref_line[0]) + calc_distance(line[1], ref_line[1])
+        if dist < min_dist:
+            min_dist = dist
+            closest_line = line
+
+    return closest_line
+
 def extract_corner_hough(patch):
     """Extract four corner points using Hough transform 
 
@@ -48,28 +62,36 @@ def extract_corner_hough(patch):
 
     rows, cols = patch.shape
     # Vertical lines
-    VL = []
-    for _, angle, dist in zip(*hough_line_peaks(h, theta, d, min_distance=100, min_angle=9, num_peaks=2)):
-        y0 = (dist - 0 * np.cos(angle)) / np.sin(angle)
-        y1 = (dist - cols * np.cos(angle)) / np.sin(angle)
-        VL += [((0, y0), (cols, y1))]
+    VLf = []
+    for _, angle, dist in zip(*hough_line_peaks(h, theta, d, min_angle=9)):
+        x0 = (dist - 0 * np.sin(angle)) / np.cos(angle)
+        x1 = (dist - rows * np.sin(angle)) / np.cos(angle)
+        VLf += [((x0, 0), (x1, rows))]
 
     # Horizontal lines
-    HL = []
-    for _, angle, dist in zip(*hough_line_peaks(hcroph, theta, d, min_distance=250, min_angle=9, num_peaks=2)):
+    HLf = []
+    for _, angle, dist in zip(*hough_line_peaks(hcroph, theta, d, min_angle=9)):
         y0 = (dist - 0 * np.cos(angle)) / np.sin(angle)
         y1 = (dist - cols * np.cos(angle)) / np.sin(angle)
-        HL += [((0, y0), (cols, y1))]
+        HLf += [((0, y0), (cols, y1))]
 
     if DEBUG:
         plt.subplot(142)
         plt.title('hough line')
         plt.imshow(patch, cmap='gray')
-        for i in xrange(len(VL)):
-            plt.plot((0, VL[i][1][0]), (VL[i][0][1], VL[i][1][1]), 'r-')
-        for i in xrange(len(HL)):
-            plt.plot((0, HL[i][1][0]), (HL[i][0][1], HL[i][1][1]), 'r-')
+        for i in xrange(len(VLf)):
+            plt.plot((VLf[i][0][0], VLf[i][1][0]), (VLf[i][0][1], VLf[i][1][1]), 'r-')
+        for i in xrange(len(HLf)):
+            plt.plot((HLf[i][0][0], HLf[i][1][0]), (HLf[i][0][1], HLf[i][1][1]), 'r-')
         plt.axis([0, cols, rows, 0])
+
+    VL = []
+    VL += [search_closest_line(VLf, [(0, 0), (0, rows)])]
+    VL += [search_closest_line(VLf, [(cols, 0), (cols, rows)])]
+
+    HL = []
+    HL += [search_closest_line(HLf, [(0, 0), (cols, 0)])]
+    HL += [search_closest_line(HLf, [(0, rows), (cols, rows)])]
 
     if len(HL) < 2 or len(VL) < 2:
         print 'No line found'
@@ -259,7 +281,7 @@ def extract_digits(fname):
 counter = [0]*10
 success = 0; fail = 0;
 
-# fname = 'select/9893_1.jpg'
+# fname = 'select/6482_2.jpg'
 # extract_digits(fname)
 
 all_pics = glob.glob('select/*.jpg')
