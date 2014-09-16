@@ -8,8 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import glob
+import time
 
-DEBUG = True
+DEBUG = False
 HEIGHT = 400
 WIDTH = 150
 
@@ -174,9 +175,17 @@ def extract_corner_harris(patch):
 
     return dest_points
 
-def remove_edge(patch):
-    x = (patch.shape)[1]*9/10.
+def remove_edge(patch, mode):
+    x = (patch.shape)[1]*0.9
     patch[:, x:] = 0
+
+    if mode == 'full':
+        x = (patch.shape)[1]*0.1
+        patch[:, :x] = 0
+        y = (patch.shape)[0]*0.9
+        patch[y:, :] = 0
+        y = (patch.shape)[0]*0.1
+        patch[:y, :] = 0
 
     return patch
 
@@ -207,7 +216,7 @@ def extract_digits(fname):
     gcrope = gcrop < thresh
 
     # Remove unwanted edge
-    gcrope = remove_edge(gcrope)
+    gcrope = remove_edge(gcrope, mode='r')
 
     if DEBUG:
         plt.subplot(141);
@@ -264,7 +273,8 @@ def extract_digits(fname):
         else:
             hundred = lines[i][0]
         counter[int(hundred)] += 1
-        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, :width])
+        patch = remove_edge(warped[i*100:i*100+100, :width], mode='full')
+        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', patch)
         
     for i in xrange(4):
         if len(lines[i]) == 3:
@@ -274,7 +284,8 @@ def extract_digits(fname):
         else:
             hundred = '0'
         counter[int(hundred)] += 1
-        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, width:2*width])
+        patch = remove_edge(warped[i*100:i*100+100, width:2*width], mode='full')
+        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', patch)
 
     for i in xrange(4):
         if len(lines[i]) == 1:
@@ -286,26 +297,34 @@ def extract_digits(fname):
         else:
             hundred = '0'
         counter[int(hundred)] += 1
-        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', warped[i*100:i*100+100, 2*width:3*width])
+        patch = remove_edge(warped[i*100:i*100+100, 2*width:3*width], mode='full')
+        io.imsave('extracted/'+hundred+'/'+str(counter[int(hundred)])+'.png', patch)
 
     return True
 
-counter = [0]*10
-success = 0; fail = 0;
+if __name__ == "__main__":
+    counter = [0]*10
+    success = 0; fail = 0;
 
-# fname = 'select/87813_2.jpg'
-# extract_digits(fname)
+    start_time = time.time()
 
-all_pics = glob.glob('select/*.jpg')
-for pic in all_pics:
-    print 'Extracting', pic, '...'
-    if extract_digits(pic):
-        success += 1
-        print 'Success!!!'
-    else:
-        fail += 1
-        print 'Fail.. :('
+    all_pics = glob.glob('G:/Kerjaan/Scan C1/*.jpg')
+    start_index = 0
+    end_index = 100000
+    # end_index = len(all_pics)
+    for i in xrange(start_index, end_index):
+        pic = all_pics[i]
+        print 'Extracting', pic, '...'
+        if extract_digits(pic):
+            success += 1
+            print 'Success!!!'
+        else:
+            fail += 1
+            print 'Fail.. :('
 
-print 'total success:', success
-print 'total fail:', fail
-print 'statistic:', counter
+    end_time = time.time()
+
+    print 'total success:', success
+    print 'total fail:', fail
+    print 'statistic:', counter
+    print 'elapsed time: ', end_time - start_time
