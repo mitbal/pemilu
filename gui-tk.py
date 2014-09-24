@@ -26,10 +26,11 @@ class App:
 		self.label_im.place(x=10, y=50)
 
 		self.btn_load_model = Button(frame, text='Load Model', command=self.load_model)
-		self.btn_load_model.place(x=550, y=110)
+		self.btn_load_model.place(x=550, y=80)
 
-		self.label_model_name = Label(frame, text='Model Name')
-		self.label_model_name.place(x=550, y=160)
+		self.modelname = StringVar(); self.modelname.set('<<Model Name>>')
+		self.label_model_name = Label(frame, textvariable=self.modelname)
+		self.label_model_name.place(x=550, y=115)
 
 		self.btn_process = Button(frame, text='Process', command=self.process)
 		self.btn_process.place(x=550, y=250)
@@ -82,7 +83,8 @@ class App:
 		self.label_im.image = photo
 
 	def load_model(self):
-		return 0
+		filename = askopenfilename()
+		self.modelname.set(filename.split('/')[-1])
 
 	def process(self):
 		return 0
