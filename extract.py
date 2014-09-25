@@ -203,7 +203,7 @@ def remove_edge(patch, mode):
     return patch
 
 
-def extract_digits(fname):
+def extract_digits(fname, mode):
     """ Extract the sub images of digits from the scanned image.
         fname is the filename of the image
     """
@@ -263,6 +263,12 @@ def extract_digits(fname):
     tform = PiecewiseAffineTransform()
     tform.estimate(src, dst)
     warped = warp(gcrope, tform, output_shape=(HEIGHT, WIDTH))
+
+    if mode == 'test':
+        # Save to file
+        fname_out = fname.split('/')[-1][:-4] + '-ex' + '.png'
+        io.imsave(fname_out, warped)
+        return True
 
     if DEBUG:
         plt.subplot(144)
@@ -335,7 +341,7 @@ if __name__ == "__main__":
     for i in xrange(start_index, end_index):
         pic = all_pics[i]
         print 'Extracting', pic, '...'
-        if extract_digits(pic):
+        if extract_digits(pic, mode='extract'):
             success += 1
             print 'Success!!!'
         else:
