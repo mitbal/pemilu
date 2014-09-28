@@ -1,27 +1,58 @@
 from skimage import io
 import glob
 
-# Number of instance per class
-NUMDATA = 500
 
-f = open('input.csv', 'w')
-header = ''
-for i in xrange(100*50):
-	header += 'feat'+str(i+1)+','
-header += 'class'
-f.write(header+'\n')
+def read_dir(f, path, cl, num_data):
+    """
+    Read file images in one directory
+    :param f: The output file stream
+    :param cl: The class label
+    :param path: The directory path
+    :return:
+    """
+    path = path + cl + '/'
+    print 'preparing data from: ', path
+    all_pics = glob.glob(path + '*.png')
+    for i in xrange(num_data):
+        print i
+        im = io.imread(all_pics[i])
+        dim = im.shape
+        line = ''
+        for j in xrange(dim[0]):
+            for k in xrange(dim[1]):
+                line += str(im[j, k]) + ','
+                line += 'c' + cl
+                f.write(line + '\n')
 
-for i in xrange(10):
-	print 'preparing data from class:', i
-	all_pics = glob.glob('cleaned/'+str(i)+'/*.png')
-	for j in xrange(NUMDATA):
-		im = io.imread(all_pics[j])
-		dim = im.shape
-		line = ''
-		for k in xrange(dim[0]):
-			for m in xrange(dim[1]):
-				line += str(im[k, m])+','
-		line += 'c'+str(i)
-		f.write(line+'\n')
 
-f.close()
+def prepare_input(fname, num_data, include_x=False):
+    """
+    Prepare CSV-formatted input from the extracted digit images
+    :param fname: The name of output file
+    :param num_data: Number of instances per class
+    :param include_x: Included special character 'X' that appears only on the most significant bit
+    :return: True is successful
+    """
+
+    # Open the file stream and prepare header
+    f = open(fname, 'w')
+    header = ''
+    for i in xrange(100 * 50):
+        header += 'feat' + str(i + 1) + ','
+    header += 'class'
+    f.write(header + '\n')
+
+    path = 'cleaned/'
+    for i in xrange(10):
+        read_dir(f, path, str(i), num_data)
+
+    if include_x:
+        read_dir(f, path, 'X', num_data)
+
+    f.close()
+
+if __name__ == '__main__':
+    fname = 'input500.csv'
+    num_data = 500
+    include_x = True
+    prepare_input(fname, num_data, include_x)
