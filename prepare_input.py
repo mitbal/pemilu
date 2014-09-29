@@ -21,8 +21,8 @@ def read_dir(f, path, cl, num_data):
         for j in xrange(dim[0]):
             for k in xrange(dim[1]):
                 line += str(im[j, k]) + ','
-                line += 'c' + cl
-                f.write(line + '\n')
+        line += 'c' + cl
+        f.write(line + '\n')
 
 
 def prepare_input(fname, num_data, include_x=False):
@@ -38,7 +38,7 @@ def prepare_input(fname, num_data, include_x=False):
     f = open(fname, 'w')
     header = ''
     for i in xrange(100 * 50):
-        header += 'feat' + str(i + 1) + ','
+        header += 'f' + str(i + 1) + ','
     header += 'class'
     f.write(header + '\n')
 
