@@ -2,6 +2,9 @@ from Tkinter import *
 from PIL import Image, ImageTk
 import PIL
 from tkFileDialog import askopenfilename
+from extract import extract_digits, remove_edge
+from skimage import io
+from subprocess import call
 
 
 class App:
@@ -71,12 +74,16 @@ class App:
         self.label_tidaksah_vote = Label(frame, textvariable=self.tidaksah_vote)
         self.label_tidaksah_vote.place(x=650, y=370)
 
+        # Important variable
+        self.imfilename = ''
+        self.modfilename = ''
+
     def load_image(self):
-        filename = askopenfilename()
-        self.imgpath.set(filename)
+        self.imfilename = askopenfilename()
+        self.imgpath.set(self.imfilename)
 
         # Load image & resize
-        image = Image.open(filename)
+        image = Image.open(self.imfilename)
         max_width = 500
         ratio = max_width / float(image.size[0])
         height = int(ratio * float(image.size[1]))
@@ -90,11 +97,49 @@ class App:
         self.label_im.image = photo
 
     def load_model(self):
-        filename = askopenfilename()
-        self.modelname.set(filename.split('/')[-1])
+        self.modfilename = askopenfilename()
+        self.modelname.set(self.modfilename.split('/')[-1])
 
     def process(self):
-        return 0
+        # Extract the vote count region
+        extract_digits(self.imfilename, mode='test')
+        exfilename = self.imfilename.split('/')[-1][:-4] + '-ex' + '.png'
+        image = Image.open(exfilename)
+        photo = ImageTk.PhotoImage(image)
+        self.label_im.configure(image=photo)
+        self.label_im.image = photo
+
+        # Write the feature into file. For now we use raw greyscale value as feature
+        f = open('predict.csv', 'w')
+        header = ''
+        total_feature = 100*50
+        for i in xrange(total_feature):
+            header += 'f'+str(i)+','
+        header += 'class'
+        f.write(header+'\n')
+
+        im = io.imread(exfilename)
+        for i in xrange(4):
+            for j in xrange(3):
+                patch = im[i*100:(i+1)*100, j*50:(j+1)*50]
+                patch = remove_edge(patch, 'full')
+                rows, cols = patch.shape
+                line = ''
+                for k in xrange(rows):
+                    for m in xrange(cols):
+                        line += str(patch[k, m]) + ','
+                line += '?'
+                f.write(line+'\n')
+        f.close()
+
+        # TODO: convert CSV to ARFF
+        #call(['java', '-cp', ])
+
+        # TODO: Invoke weka
+        #call(['java', ''])
+
+        # TODO: update vote count
+        #self.label_jokowi_vote.set('')
 
 
 root = Tk()
