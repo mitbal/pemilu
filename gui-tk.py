@@ -132,8 +132,9 @@ class App:
                 f.write(line+'\n')
         f.close()
 
-        # TODO: convert CSV to ARFF
-        #call(['java', '-cp', ])
+        # convert CSV to ARFF
+        call(['javac', '-cp', 'weka.jar', 'CVS2Arff.java'])
+        call(['java', '-cp', 'weka.jar;.', 'CVS2Arff', 'predict.csv', 'predict.arff'])
 
         # TODO: Invoke weka
         #call(['java', ''])
