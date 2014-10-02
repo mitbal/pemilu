@@ -9,8 +9,8 @@ def image_filename(i, j):
 	return prefix_pad(i, 7) + prefix_pad(j, 3) + '04'
 
 # Loop sesuai banyak jumlah area
-start_tps = 1
-end_tps = 80000
+start_tps = 1000
+end_tps = 11000
 tps = 0
 for i in xrange(start_tps, end_tps):
 	print 'Now donwloading data from area: ', i

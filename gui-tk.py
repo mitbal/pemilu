@@ -133,14 +133,19 @@ class App:
         f.close()
 
         # convert CSV to ARFF
-        call(['javac', '-cp', 'weka.jar', 'CVS2Arff.java'])
-        call(['java', '-cp', 'weka.jar;.', 'CVS2Arff', 'predict.csv', 'predict.arff'])
+        #call(['javac', '-cp', 'weka.jar', 'CVS2Arff.java'])
+        #call(['java', '-cp', 'weka.jar;.', 'CVS2Arff', 'predict.csv', 'predict.arff'])
 
-        # TODO: Invoke weka
-        #call(['java', ''])
+        # Prediction with pretrained model
+        call(['javac', '-cp', 'weka.jar', 'Predictor.java'])
+        call(['java', '-cp', 'weka.jar;.', 'Predictor', self.modelname.get()])
 
-        # TODO: update vote count
-        #self.label_jokowi_vote.set('')
+        # Update vote count
+        f = open('vote.txt', 'r')
+        self.prabowo_vote.set(f.readline()[:-1])
+        self.jokowi_vote.set(f.readline()[:-1])
+        self.sah_vote.set(f.readline()[:-1])
+        self.tidaksah_vote.set(f.readline()[:-1])
 
 
 root = Tk()

@@ -14,7 +14,6 @@ def read_dir(f, path, cl, num_data):
     print 'preparing data from: ', path
     all_pics = glob.glob(path + '*.png')
     for i in xrange(num_data):
-        print i
         im = io.imread(all_pics[i])
         dim = im.shape
         line = ''
@@ -52,7 +51,7 @@ def prepare_input(fname, num_data, include_x=False):
     f.close()
 
 if __name__ == '__main__':
-    fname = 'input500.csv'
-    num_data = 500
+    fname = 'input2000x.csv'
+    num_data = 2000
     include_x = True
     prepare_input(fname, num_data, include_x)
